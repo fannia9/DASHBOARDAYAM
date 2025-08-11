@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard Monitoring Kandang Ayam</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    background-color: #121212;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+  }
+  .dashboard {
+    display: flex;
+    gap: 20px;
+    max-width: 1200px;
+  }
+  .left-panel {
+    flex: 1;
+    max-width: 720px;
+  }
+  .right-panel {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .header {
+    background-color: #1a1a1a;
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h2 {
+    margin: 0;
+    font-weight: 700;
+    color: #ffb703;
+  }
+  .header .welcome {
+    color: #24a0ff;
+    font-weight: 600;
+  }
+  .header .time {
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
+
+  /* Kotak Jumlah Ayam, Pakan, Air Minum */
+  .kandang-row {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+  }
+  .card-kandang {
+    background: #1f1f3f;
+    border-radius: 12px;
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card-kandang .icon {
+    font-size: 22px;
+    color: #a16eff;
+  }
+  .card-kandang .label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .card-kandang .value {
+    font-size: 28px;
+    font-weight: 900;
+  }
+
+  /* Intensitas Cahaya & Ketinggian Lokasi dan Suhu Kandang side by side */
+  .info-row {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+  }
+  .info-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .info-box {
+    border-radius: 12px;
+    padding: 20px;
+    color: black;
+  }
+  .info-light {
+    background: linear-gradient(90deg, #fcb045, #fd1d1d, #833ab4);
+    color: #fff;
+  }
+  .info-light strong {
+    color: #00ff00;
+  }
+  .info-altitude {
+    background: #2f3a57;
+    color: white;
+  }
+  .info-box h5, .info-box div {
+    margin: 0 0 6px 0;
+  }
+  .info-box .value {
+    font-size: 28px;
+    font-weight: 900;
+  }
+  .info-right {
+    flex: 1;
+  }
+  .temp-card {
+    background: #1f1f3f;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+  }
+  .temp-card h5 {
+    margin-bottom: 10px;
+  }
+  .temp-status {
+    font-weight: 700;
+    color: #00cc44;
+  }
+  .temp-value {
+    font-size: 48px;
+    font-weight: 900;
+    margin: 10px 0;
+  }
+  .temp-rekomendasi {
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  /* Grafik suhu dan kelembapan */
+  .chart-container {
+    background: #1f1f3f;
+    border-radius: 12px;
+    padding: 20px;
+    color: white;
+  }
+  .chart-header {
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-color {
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .legend-suhu { background: #d9b800; }
+  .legend-kelembapan { background: #00a9ff; }
+  .legend-tekanan { background: #d94796; }
+
+  /* Kontrol Peralatan */
+  .control-panel {
+    background: #1f1f3f;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .control-panel h5 {
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .control-item {
+    background: rgba(255 255 255 / 0.05);
+    border-radius: 12px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .control-label-status {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .control-label {
+    font-weight: 700;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .control-status {
+    font-size: 14px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .control-status .dot {
+    width: 14px;
+    height: 14px;
+    background: #555;
+    border-radius: 50%;
+  }
+  .btn-nyalakan {
+    background: rgba(255 255 255 / 0.15);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .btn-nyalakan:hover {
+    background-color: rgba(255 255 255 / 0.35);
+  }
+
+  .btn-kipas {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+  }
+  .btn-pompa {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+  }
+  .btn-pakan {
+    background: linear-gradient(90deg, #ffc107, #ffeb3b);
+    color: black;
+  }
+
+  /* Icon styling */
+  .icon-kipas::before {
+    content: "🌀";
+    font-size: 22px;
+  }
+  .icon-pompa::before {
+    content: "💧";
+    font-size: 22px;
+  }
+  .icon-pakan::before {
+    content: "🍽️";
+    font-size: 22px;
+  }
+  .icon-lampu::before {
+    content: "💡";
+    margin-right: 8px;
+  }
+  .icon-termo::before {
+    content: "🌡️";
+    margin-right: 8px;
+  }
+  .icon-suhu::before {
+    content: "🌡️";
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <div class="left-panel">
+
+    <div class="header">
+      <div class="d-flex align-items-center p-3 bg-dark rounded mb-3">
+    <!-- Logo bulat -->
+    <img src="D:\XI P.AFFAN\logoAyam-removebg-preview.png" alt="Logo" class="rounded-circle me-3" 
+         style="width:60px; height:60px; object-fit:cover;">
+
+    <!-- Teks Judul -->
+    <div>
+        <h2 class="m-0 text-warning fw-bold">DASHBOARD MONITORING KANDANG AYAM</h2>
+        <small class="text-light">
+            Selamat Datang! <span class="text-primary">Ayam Sehat, Telurpun Lezat!</span>
+        </small>
+    </div>
+
+    <!-- Jam di kanan -->
+    <div class="ms-auto text-light fw-bold fs-5">
+        10.58.42
+    </div>
+</div>
+
+</div>
+
+
+    <div class="kandang-row">
+      <div class="card-kandang">
+        <div class="icon icon-lampu"></div>
+        <div class="label">Jumlah Ayam</div>
+        <div class="value">3200 ekor</div>
+      </div>
+      <div class="card-kandang">
+        <div class="icon icon-pakan"></div>
+        <div class="label">Jumlah Pakan</div>
+        <div class="value">510 Kg</div>
+      </div>
+      <div class="card-kandang">
+        <div class="icon icon-pompa"></div>
+        <div class="label">Air Minum</div>
+        <div class="value">180 L</div>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-left">
+        <div class="info-box info-light">
+          <div><span class="icon icon-lampu"></span><b>Intensitas Cahaya</b></div>
+          <div>Status Lampu: <strong>MENYALA</strong> 🌞</div>
+          <div class="value">48699 Lux</div>
+        </div>
+        <div class="info-box info-altitude">
+          <div><b>Ketinggian Lokasi</b></div>
+          <div style="font-size:12px; margin-bottom:6px;">Dari permukaan laut</div>
+          <div class="value">452.8 mdpl</div>
+        </div>
+      </div>
+
+      <div class="info-right">
+        <div class="temp-card">
+          <h5><span class="icon icon-termo"></span> Suhu Kandang</h5>
+          <div>Status: <span class="temp-status">IDEAL</span></div>
+          <div class="temp-value">27.6°C</div>
+          <div class="temp-rekomendasi">Rekomendasi: <b>24–30°C</b> untuk ayam petelur</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+
+    <div class="chart-container">
+      <div class="chart-header">
+        <div>📈 Grafik Suhu & Kelembapan</div>
+        <div class="legend">
+          <span><span class="legend-color legend-suhu"></span> Suhu (°C)</span>
+          <span><span class="legend-color legend-kelembapan"></span> Kelembapan (%)</span>
+          <span><span class="legend-color legend-tekanan"></span> Tekanan (hPa)</span>
+        </div>
+      </div>
+      <canvas id="grafikSuhu" height="140"></canvas>
+    </div>
+
+    <div class="control-panel">
+      <h5>Kontrol Peralatan</h5>
+
+      <div class="control-item btn-kipas">
+        <div class="control-label-status">
+          <div class="control-label"><span class="icon-kipas"></span> Kipas</div>
+          <div class="control-status"><span class="dot"></span> Status: Mati</div>
+        </div>
+        <button class="btn-nyalakan">Nyalakan</button>
+      </div>
+
+      <div class="control-item btn-pompa">
+        <div class="control-label-status">
+          <div class="control-label"><span class="icon-pompa"></span> Pompa</div>
+          <div class="control-status"><span class="dot"></span> Status: Mati</div>
+        </div>
+        <button class="btn-nyalakan">Nyalakan</button>
+      </div>
+
+      <div class="control-item btn-pakan">
+        <div class="control-label-status">
+          <div class="control-label"><span class="icon-pakan"></span> Pakan</div>
+          <div class="control-status"><span class="dot"></span> Status: Mati</div>
+        </div>
+        <button class="btn-nyalakan">Nyalakan</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // Update jam realtime
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID');
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Data Grafik suhu, kelembapan, tekanan (sesuai contoh)
+  const labels = ['13:32', '13:33', '13:34', '13:34', '13:35', '13:35', '13:35', '13:35'];
+
+  const data = {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Suhu (°C)',
+        data: [27, 27, 27, 27, 27, 27, 27, 27],
+        borderColor: '#d9b800',
+        backgroundColor: '#d9b800',
+        fill: false,
+        tension: 0.3,
+        pointRadius: 2,
+        borderWidth: 2,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Kelembapan (%)',
+        data: [75, 75, 75, 75, 75, 75, 75, 75],
+        borderColor: '#00a9ff',
+        backgroundColor: '#00a9ff',
+        fill: false,
+        tension: 0.3,
+        pointRadius: 2,
+        borderWidth: 2,
+        yAxisID: 'y1',
+      },
+      {
+        label: 'Tekanan (hPa)',
+        data: [1025, 1025, 1025, 1025, 1025, 1025, 1025, 1025],
+        borderColor: '#d94796',
+        backgroundColor: '#d94796',
+        fill: false,
+        tension: 0.3,
+        pointRadius: 2,
+        borderWidth: 2,
+        yAxisID: 'y2',
+      },
+    ],
+  };
+
+  const config = {
+    type: 'line',
+    data: data,
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      stacked: false,
+      scales: {
+        y: {
+          type: 'linear',
+          position: 'left',
+          min: 24,
+          max: 30,
+          ticks: {
+            stepSize: 1,
+            color: '#d9b800',
+          },
+          grid: {
+            color: '#444',
+          },
+        },
+        y1: {
+          type: 'linear',
+          position: 'right',
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 10,
+            color: '#00a9ff',
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+        },
+        y2: {
+          type: 'linear',
+          position: 'right',
+          min: 1000,
+          max: 1050,
+          ticks: {
+            stepSize: 5,
+            color: '#d94796',
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+        },
+        x: {
+          ticks: {
+            color: '#eee',
+          },
+          grid: {
+            color: '#333',
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+    },
+  };
+
+  const myChart = new Chart(
+    document.getElementById('grafikSuhu'),
+    config
+  );
+</script>
+
+</body>
+</html>
